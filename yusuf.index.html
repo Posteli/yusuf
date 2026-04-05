@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Мой Говорящий Друг — с фото 212.jpg</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Comic Neue', 'Poppins', sans-serif;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: linear-gradient(145deg, #2d3561, #1a1f3a);
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 1100px;
+            max-width: 98vw;
+        }
+
+        .game-window {
+            background: #0f0f23;
+            border-radius: 32px;
+            overflow: hidden;
+        }
+
+        /* ===== ВКЛАДКА С ГИПЕРССЫЛКОЙ ===== */
+        .top-nav {
+            background: #0f0f23;
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .game-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a2e;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: transform 0.2s, opacity 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .game-link:active {
+            transform: scale(0.96);
+        }
+
+        @media (hover: hover) {
+            .game-link:hover {
+                transform: scale(1.02);
+                opacity: 0.9;
+            }
+        }
+
+        .stats-bar {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            color: #ffd966;
+            font-size: 18px;
+        }
+
+        .needs {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .need {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .need-bar {
+            width: 80px;
+            height: 8px;
+            background: #555;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .need-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s;
+            background: #4caf50;
+        }
+
+        .need-fill.critical { background: #f44336; }
+        .need-fill.low { background: #ff9800; }
+
+        .game-area {
+            position: relative;
+            min-height: 550px;
+            overflow: hidden;
+            background: linear-gradient(145deg, #3a2a1f, #2c1e12);
+        }
+
+        .room {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .room.main-room {
+            background: linear-gradient(145deg, #3a2a1f, #2c1e12);
+            z-index: 2;
+        }
+
+        .room.bedroom {
+            background: linear-gradient(145deg, #2a235a, #1a153f);
+            transform: translateX(100%);
+            z-index: 1;
+        }
+
+        .room.toilet-room {
+            background: linear-gradient(145deg, #4a6fa5, #1e3a5f);
+            transform: translateX(200%);
+            z-index: 1;
+        }
+
+        .room.active {
+            transform: translateX(0);
+        }
+
+        .window {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 100px;
+            background: #87CEEB;
+            border-radius: 15px;
+            border: 4px solid #deb887;
+        }
+
+        .bed {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 150px;
+            height: 100px;
+            background: #8b5a2b;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            box-shadow: inset 0 0 0 3px #deb887;
+            cursor: pointer;
+        }
+
+        .bed-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 12px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .toilet-item {
+            position: absolute;
+            bottom: 50px;
+            right: 80px;
+            width: 100px;
+            height: 110px;
+            background: #e0e0e0;
+            border-radius: 50% 50% 40% 40%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 55px;
+            box-shadow: inset 0 0 0 3px #b0b0b0, 0 5px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        .fridge {
+            position: absolute;
+            bottom: 30px;
+            right: 50px;
+            width: 80px;
+            height: 120px;
+            background: #b0bec5;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            cursor: pointer;
+        }
+
+        .character {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #ffd966;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: grab;
+            transition: all 0.1s ease;
+            z-index: 100;
+        }
+
+        .character.dragging {
+            cursor: grabbing;
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .character img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .food-item {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #ff6b35;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: grab;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 200;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 150;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 12px 0;
+            border-style: solid;
+            border-color: white transparent transparent;
+        }
+
+        .countdown-timer {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 30px;
+            color: #ffaa66;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 150;
+        }
+
+        .action-tabs {
+            display: flex;
+            background: #1e1b3b;
+            padding: 8px 16px 0;
+            gap: 8px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background: #2a264f;
+            color: #aaa;
+            border: none;
+            border-radius: 20px 20px 0 0;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: #ffb347;
+            color: #1e1b3b;
+        }
+
+        .actions-panel {
+            background: #2a264f;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #ffb347, #ff8c00);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+
+        .message-log {
+            background: #0a0a1a;
+            padding: 15px;
+            font-size: 14px;
+            color: #c0c0e0;
+            height: 150px;
+            overflow-y: auto;
+            border-top: 1px solid #2a264f;
+            font-family: monospace;
+        }
+
+        .message-log div {
+            padding: 5px 0;
+            border-bottom: 1px solid #1a1a3a;
+        }
+
+        @keyframes bounce {
+            0%,100%{ transform: translateX(-50%) translateY(0);}
+            50%{ transform: translateX(-50%) translateY(-8px);}
+        }
+
+        @keyframes eatAnim {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.8); }
+            100% { transform: scale(1); }
+        }
+
+        .character.eating {
+            animation: eatAnim 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .top-nav {
+                justify-content: center;
+            }
+            .stats-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .needs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-window">
+        <!-- ===== ВКЛАДКА С ГИПЕРССЫЛКОЙ ===== -->
+        <div class="top-nav">
+            <a href="#" id="otherGameLink" class="game-link" target="_blank">
+                🎮 ДРУГАЯ ИГРА 🎮
+            </a>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span>⭐</span>
+                <span class="stat-value" id="happinessScore">0</span>
+            </div>
+            <div class="needs">
+                <div class="need">🍕 <div class="need-bar"><div class="need-fill" id="hungerFill"></div></div></div>
+                <div class="need">🚽 <div class="need-bar"><div class="need-fill" id="toiletFill"></div></div></div>
+                <div class="need">😴 <div class="need-bar"><div class="need-fill" id="energyFill"></div></div></div>
+                <div class="need">🎮 <div class="need-bar"><div class="need-fill" id="funFill"></div></div></div>
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="room main-room" id="mainRoom">
+                <div class="window"></div>
+                <div class="fridge" id="fridge">🍕</div>
+                <div class="character" id="character">
+                    <img id="friendPhoto" src="212.jpg" alt="друг">
+                    <div class="speech-bubble" id="speechBubble">😄 Привет! Перетащи меня в туалет или на кровать!</div>
+                </div>
+                <div class="countdown-timer" id="countdownTimer" style="display: none;">⏳</div>
+            </div>
+
+            <div class="room bedroom" id="bedroom">
+                <div class="window" style="background: #1a1a3a;"></div>
+                <div class="bed">
+                    <span class="bed-label">🛌 Кровать</span>
+                </div>
+            </div>
+
+            <div class="room toilet-room" id="toiletRoom">
+                <div class="window" style="background: #a0c4ff;"></div>
+                <div class="toilet-item" id="toiletObject">🚽</div>
+                <div class="countdown-timer" id="toiletCountdown" style="left: auto; right: 20px; bottom: 20px;">⏳ 0 сек</div>
+            </div>
+        </div>
+
+        <div class="action-tabs">
+            <button class="tab active" data-tab="care">🍽️ Уход</button>
+            <button class="tab" data-tab="activities">🎪 Игры</button>
+            <button class="tab" data-tab="toilet">🚽 Нужды</button>
+        </div>
+
+        <div class="actions-panel" id="actionsPanel"></div>
+        <div class="message-log" id="messageLog">
+            🤖 ДОБРО ПОЖАЛОВАТЬ!<br>
+            • Нажми на холодильник 🍕 — появится еда, перетащи её к другу.<br>
+            • Перетащи друга в туалет 🚽 — начнётся обратный отсчёт, после которого нужда обнулится.<br>
+            • Перетащи друга на кровать 🛌 — он уснёт и восстановит энергию.<br>
+            • Персонаж говорит голосом! 🎤
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== ГИПЕРССЫЛКА ==========
+    // ЗДЕСЬ ТЫ МОЖЕШЬ ЗАМЕНИТЬ ССЫЛКУ НА СВОЮ
+    const gameLink = document.getElementById('otherGameLink');
+    gameLink.href = "p.index.html";  // <-- ЗАМЕНИ НА СВОЮ ССЫЛКУ
+    
+    // ========== ФОТО ПЕРСОНАЖА 212.jpg ==========
+    document.getElementById('friendPhoto').src = "212.jpg";
+    
+    // ========== СОСТОЯНИЕ ==========
+    let needs = { hunger: 70, toilet: 80, energy: 75, fun: 70 };
+    let happiness = 0;
+    let currentRoom = 'main';
+    let isSleeping = false;
+    let isOnToilet = false;
+    let toiletTimer = null;
+    let toiletRemaining = 0;
+    
+    // Элементы
+    const character = document.getElementById('character');
+    const mainRoom = document.getElementById('mainRoom');
+    const bedroom = document.getElementById('bedroom');
+    const toiletRoom = document.getElementById('toiletRoom');
+    const speechBubble = document.getElementById('speechBubble');
+    const messageLog = document.getElementById('messageLog');
+    const fridge = document.getElementById('fridge');
+    const countdownTimerDiv = document.getElementById('countdownTimer');
+    const toiletCountdownDiv = document.getElementById('toiletCountdown');
+    
+    // Drag & drop
+    let draggedFood = null;
+    let dragStartX = 0, dragStartY = 0;
+    let isDraggingCharacter = false;
+    let characterOffsetX = 0, characterOffsetY = 0;
+    
+    // ========== ГОЛОС ==========
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ru-RU';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+    
+    // ========== СООБЩЕНИЯ ==========
+    function sayMessage(text, isUrgent = false, speakIt = true) {
+        speechBubble.innerText = text;
+        speechBubble.style.animation = 'bounce 0.4s ease';
+        setTimeout(() => speechBubble.style.animation = '', 400);
+        
+        const logDiv = document.createElement('div');
+        const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        logDiv.innerHTML = `<span style="color:#ffb347;">[${time}]</span> 💬 ${text}`;
+        if(isUrgent) logDiv.style.color = "#ffaa66";
+        messageLog.appendChild(logDiv);
+        messageLog.scrollTop = messageLog.scrollHeight;
+        while(messageLog.children.length > 25) messageLog.removeChild(messageLog.firstChild);
+        
+        if(speakIt && !isSleeping && !isOnToilet) {
+            speak(text);
+        }
+    }
+    
+    function addSystemMessage(text) {
+        const logDiv = document.createElement('div');
+        const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        logDiv.innerHTML = `<span style="color:#888;">[${time}]</span> 🔔 ${text}`;
+        messageLog.appendChild(logDiv);
+        messageLog.scrollTop = messageLog.scrollHeight;
+    }
+    
+    // ========== UI ==========
+    function updateUI() {
+        document.getElementById('hungerFill').style.width = needs.hunger + '%';
+        document.getElementById('toiletFill').style.width = needs.toilet + '%';
+        document.getElementById('energyFill').style.width = needs.energy + '%';
+        document.getElementById('funFill').style.width = needs.fun + '%';
+        document.getElementById('happinessScore').innerText = Math.floor(happiness);
+        
+        ['hungerFill', 'toiletFill', 'energyFill', 'funFill'].forEach(id => {
+            let val = needs[id.replace('Fill', '')];
+            let fill = document.getElementById(id);
+            if(val < 30) fill.classList.add('critical');
+            else if(val < 60) fill.classList.add('low');
+            else fill.classList.remove('low','critical');
+        });
+    }
+    
+    // ========== ТУАЛЕТ ==========
+    function startToiletCountdown() {
+        if(isOnToilet) return;
+        if(needs.toilet >= 85) {
+            sayMessage("🚽 Не хочу в туалет сейчас!", false, true);
+            return false;
+        }
+        
+        currentRoom = 'toilet';
+        mainRoom.classList.remove('active');
+        bedroom.classList.remove('active');
+        toiletRoom.classList.add('active');
+        isOnToilet = true;
+        
+        let duration = 5;
+        toiletRemaining = duration;
+        toiletCountdownDiv.style.display = 'block';
+        toiletCountdownDiv.innerText = `🚽 Осталось: ${toiletRemaining} сек`;
+        addSystemMessage(`Друг сел на унитаз. Обратный отсчёт: ${duration} секунд.`);
+        sayMessage("🚽 Ну всё... сейчас облегчусь!", false, true);
+        
+        if(toiletTimer) clearInterval(toiletTimer);
+        toiletTimer = setInterval(() => {
+            toiletRemaining--;
+            toiletCountdownDiv.innerText = `🚽 Осталось: ${toiletRemaining} сек`;
+            
+            if(toiletRemaining <= 0) {
+                clearInterval(toiletTimer);
+                finishToilet();
+            }
+        }, 1000);
+        
+        return true;
+    }
+    
+    function finishToilet() {
+        isOnToilet = false;
+        needs.toilet = 100;
+        happiness += 15;
+        updateUI();
+        addSystemMessage(`✅ Друг закончил дела в туалете! Нужда обнулена! +15 счастья.`);
+        sayMessage("🚽 Уфф... теперь легче! Спасибо что проводил!", false, true);
+        
+        currentRoom = 'main';
+        toiletRoom.classList.remove('active');
+        mainRoom.classList.add('active');
+        toiletCountdownDiv.style.display = 'none';
+        if(toiletTimer) clearInterval(toiletTimer);
+        toiletTimer = null;
+    }
+    
+    // ========== ЕДА ==========
+    function feed() {
+        if(needs.hunger >= 95) {
+            sayMessage("🍽️ Я сыт! Не лезет больше!", false, true);
+            return false;
+        }
+        needs.hunger = Math.min(100, needs.hunger + 35);
+        happiness += 8;
+        sayMessage("🍕 Ням-ням! Очень вкусно! Спасибо! 😋", false, true);
+        updateUI();
+        character.classList.add('eating');
+        setTimeout(() => character.classList.remove('eating'), 300);
+        return true;
+    }
+    
+    // ========== СОН ==========
+    function putToSleep() {
+        if(isSleeping) {
+            sayMessage("😴 Я уже сплю... Не мешай!", false, true);
+            return false;
+        }
+        if(needs.energy >= 90) {
+            sayMessage("💪 Я не хочу спать! Полон энергии!", false, true);
+            return false;
+        }
+        
+        currentRoom = 'bedroom';
+        mainRoom.classList.remove('active');
+        toiletRoom.classList.remove('active');
+        bedroom.classList.add('active');
+        isSleeping = true;
+        character.style.filter = "brightness(0.8)";
+        sayMessage("😴 *Зевает* Спокойной ночи... Укладываюсь спать...", false, true);
+        addSystemMessage(`🛌 Друг уснул в спальне. Энергия восстанавливается.`);
+        
+        let sleepInterval = setInterval(() => {
+            if(needs.energy >= 100 || !isSleeping) {
+                clearInterval(sleepInterval);
+                return;
+            }
+            needs.energy = Math.min(100, needs.energy + 5);
+            happiness += 1;
+            updateUI();
+        }, 1500);
+        
+        setTimeout(() => {
+            if(isSleeping) wakeUp();
+        }, 8000);
+        
+        return true;
+    }
+    
+    function wakeUp() {
+        if(!isSleeping) return;
+        isSleeping = false;
+        currentRoom = 'main';
+        mainRoom.classList.add('active');
+        bedroom.classList.remove('active');
+        character.style.filter = "none";
+        needs.energy = 100;
+        needs.toilet = Math.max(0, needs.toilet - 25);
+        updateUI();
+        sayMessage("🌞 *Потягивается* Доброе утро! Выспался отлично!", false, true);
+        addSystemMessage(`🌞 Друг проснулся, энергия полная, туалет -25.`);
+    }
+    
+    // ========== ИГРЫ ==========
+    function play() {
+        if(needs.fun >= 95) { sayMessage("🎉 Мне уже весело!"); return; }
+        needs.fun = Math.min(100, needs.fun + 30);
+        needs.hunger = Math.max(0, needs.hunger - 8);
+        needs.energy = Math.max(0, needs.energy - 5);
+        happiness += 6;
+        sayMessage("🤪 Ура! Классно поиграли!", false, true);
+        updateUI();
+    }
+    
+    function pet() {
+        happiness += 4;
+        sayMessage("😊 Приятно, когда гладишь! Мурлык!", false, true);
+        updateUI();
+    }
+    
+    function quickToilet() {
+        if(isOnToilet) { sayMessage("Я уже в туалете!"); return; }
+        startToiletCountdown();
+    }
+    
+    // ========== ЕДА DRAG ==========
+    function createFoodItem(x, y) {
+        const food = document.createElement('div');
+        food.className = 'food-item';
+        food.innerHTML = '🍕';
+        food.style.left = x + 'px';
+        food.style.top = y + 'px';
+        document.querySelector('.game-area').appendChild(food);
+        
+        food.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            draggedFood = food;
+            dragStartX = e.clientX - food.offsetLeft;
+            dragStartY = e.clientY - food.offsetTop;
+            food.classList.add('dragging');
+        });
+        return food;
+    }
+    
+    // ========== ПЕРЕТАСКИВАНИЕ ПЕРСОНАЖА ==========
+    character.addEventListener('mousedown', (e) => {
+        if(e.target === character || character.contains(e.target)) {
+            e.preventDefault();
+            if(isSleeping) { sayMessage("😴 Не трогай, я сплю..."); return; }
+            if(isOnToilet) { sayMessage("🚽 Подожди, я занят важным делом!"); return; }
+            isDraggingCharacter = true;
+            const rect = character.getBoundingClientRect();
+            const areaRect = document.querySelector('.game-area').getBoundingClientRect();
+            characterOffsetX = e.clientX - rect.left;
+            characterOffsetY = e.clientY - rect.top;
+            character.classList.add('dragging');
+        }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if(draggedFood) {
+            draggedFood.style.left = (e.clientX - dragStartX) + 'px';
+            draggedFood.style.top = (e.clientY - dragStartY) + 'px';
+        }
+        if(isDraggingCharacter) {
+            const area = document.querySelector('.game-area');
+            const areaRect = area.getBoundingClientRect();
+            let newLeft = e.clientX - characterOffsetX - areaRect.left;
+            let newTop = e.clientY - characterOffsetY - areaRect.top;
+            newLeft = Math.min(Math.max(newLeft, 0), areaRect.width - character.offsetWidth);
+            newTop = Math.min(Math.max(newTop, 0), areaRect.height - character.offsetHeight);
+            character.style.position = 'absolute';
+            character.style.left = newLeft + 'px';
+            character.style.top = newTop + 'px';
+        }
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+        if(draggedFood) {
+            const characterRect = character.getBoundingClientRect();
+            const foodRect = draggedFood.getBoundingClientRect();
+            if(foodRect.right > characterRect.left && foodRect.left < characterRect.right && 
+               foodRect.bottom > characterRect.top && foodRect.top < characterRect.bottom) {
+                feed();
+                draggedFood.remove();
+            } else {
+                draggedFood.remove();
+                sayMessage("😕 Мимо! Перетащи еду прямо ко мне в рот!");
+            }
+            draggedFood.classList.remove('dragging');
+            draggedFood = null;
+        }
+        
+        if(isDraggingCharacter) {
+            const charRect = character.getBoundingClientRect();
+            const bedRect = document.querySelector('.bed')?.getBoundingClientRect();
+            const toiletObjRect = document.querySelector('.toilet-item')?.getBoundingClientRect();
+            
+            let droppedOnBed = false;
+            let droppedOnToilet = false;
+            
+            if(bedRect && charRect.right > bedRect.left && charRect.left < bedRect.right && 
+               charRect.bottom > bedRect.top && charRect.top < bedRect.bottom) {
+                droppedOnBed = true;
+            }
+            if(toiletObjRect && charRect.right > toiletObjRect.left && charRect.left < toiletObjRect.right && 
+               charRect.bottom > toiletObjRect.top && charRect.top < toiletObjRect.bottom) {
+                droppedOnToilet = true;
+            }
+            
+            if(droppedOnToilet && !isOnToilet && !isSleeping) {
+                startToiletCountdown();
+            } 
+            else if(droppedOnBed && !isSleeping && !isOnToilet) {
+                putToSleep();
+            }
+            else if(!droppedOnBed && !droppedOnToilet && currentRoom !== 'main') {
+                if(currentRoom === 'bedroom' && !isSleeping) wakeUp();
+                if(currentRoom === 'toilet' && !isOnToilet) {
+                    currentRoom = 'main';
+                    toiletRoom.classList.remove('active');
+                    mainRoom.classList.add('active');
+                }
+            }
+            
+            isDraggingCharacter = false;
+            character.classList.remove('dragging');
+            character.style.position = '';
+            character.style.left = '';
+            character.style.top = '';
+        }
+    });
+    
+    fridge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(isSleeping) { sayMessage("😴 Тсс... я сплю, не шуми с едой"); return; }
+        if(isOnToilet) { sayMessage("🚽 Я занят, потом поем"); return; }
+        const fridgeRect = fridge.getBoundingClientRect();
+        const areaRect = document.querySelector('.game-area').getBoundingClientRect();
+        const x = fridgeRect.left - areaRect.left + 20;
+        const y = fridgeRect.top - areaRect.top + 40;
+        createFoodItem(x, y);
+        sayMessage("🍕 Возьми пиццу и перетащи ко мне!");
+    });
+    
+    // ========== ВКЛАДКИ ==========
+    const actionsPanel = document.getElementById('actionsPanel');
+    function setActiveTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+        if(tabId === 'care') {
+            actionsPanel.innerHTML = `
+                <button class="action-btn" onclick="pet()">✋ Погладить</button>
+                <button class="action-btn" onclick="if(!isSleeping && !isOnToilet) putToSleep(); else sayMessage('Сейчас нельзя спать')">🛌 Уложить спать</button>
+            `;
+        } else if(tabId === 'activities') {
+            actionsPanel.innerHTML = `
+                <button class="action-btn" onclick="play()">🎮 Поиграть</button>
+                <button class="action-btn" onclick="pet()">🤗 Обнять</button>
+            `;
+        } else if(tabId === 'toilet') {
+            actionsPanel.innerHTML = `
+                <button class="action-btn" onclick="quickToilet()">🚽 Отвести в туалет</button>
+            `;
+        }
+    }
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => setActiveTab(tab.getAttribute('data-tab')));
+    });
+    
+    // ========== ТАЙМЕРЫ ==========
+    setInterval(() => {
+        if(!isSleeping && !isOnToilet) {
+            needs.hunger = Math.max(0, needs.hunger - 3);
+            needs.toilet = Math.max(0, needs.toilet - 2);
+            needs.energy = Math.max(0, needs.energy - 2);
+            needs.fun = Math.max(0, needs.fun - 2);
+        } else if(isSleeping) {
+            needs.energy = Math.min(100, needs.energy + 4);
+        }
+        updateUI();
+        
+        if(needs.hunger <= 15) sayMessage("🍕 Я голодный! Срочно покорми меня!", true, true);
+        if(needs.toilet <= 15) sayMessage("🚽 Ой-ой! Очень хочу в туалет! Перетащи меня!", true, true);
+        if(needs.energy <= 15) sayMessage("😴 Умираю спать... Отнеси меня на кровать!", true, true);
+        
+        if(needs.hunger <= 0 || needs.toilet <= 0 || needs.energy <= 0) {
+            happiness = Math.max(0, happiness - 10);
+            sayMessage("😭 Мне очень плохо! Ты забываешь обо мне!", true, true);
+            updateUI();
+        }
+    }, 10000);
+    
+    // ========== СТАРТ ==========
+    setActiveTab('care');
+    updateUI();
+    mainRoom.classList.add('active');
+    bedroom.classList.remove('active');
+    toiletRoom.classList.remove('active');
+    addSystemMessage("🎮 Игра запущена! Персонаж загружен из файла 212.jpg");
+</script>
+</body>
+</html>

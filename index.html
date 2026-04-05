@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Кликер — звуки на каждый 10/50/100 клик</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            padding: 16px;
+        }
+
+        .game-container {
+            background: linear-gradient(145deg, #2d2d44, #1a1a2a);
+            border-radius: 48px;
+            padding: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .game-window {
+            background: #0f0f23;
+            border-radius: 32px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .top-nav {
+            background: #0f0f23;
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .game-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a2e;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .game-link:active, .reset-btn:active {
+            transform: scale(0.96);
+        }
+
+        @media (hover: hover) {
+            .game-link:hover, .reset-btn:hover {
+                transform: scale(1.02);
+                opacity: 0.9;
+            }
+        }
+
+        .coin-header {
+            background: linear-gradient(135deg, #f7931a, #ffd700);
+            padding: 20px 16px;
+        }
+
+        .coin-balance {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 60px;
+            padding: 10px 25px;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .balance-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            font-family: monospace;
+        }
+
+        .per-click {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 5px;
+        }
+
+        .character-clicker {
+            padding: 30px 20px;
+            background: linear-gradient(145deg, #2a2a3a, #1a1a2a);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .character-avatar {
+            width: min(250px, 70vw);
+            height: min(250px, 70vw);
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #ffd700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.05s ease;
+            cursor: pointer;
+        }
+
+        .character-avatar:active {
+            transform: scale(0.97);
+        }
+
+        .character-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .floating-number {
+            position: absolute;
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 5px #ff6600;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) scale(1.5);
+            }
+        }
+
+        .energy-bar {
+            padding: 15px 20px;
+            background: #1a1a2a;
+            border-top: 1px solid #3a3a5a;
+        }
+
+        .energy-label {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .energy-fill-container {
+            background: #333;
+            border-radius: 20px;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .energy-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.2s;
+        }
+
+        .energy-fill.low { background: linear-gradient(90deg, #ff9800, #ffc107); }
+        .energy-fill.critical { background: linear-gradient(90deg, #f44336, #ff5722); }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: #15152a;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #1f1f3a;
+            border-radius: 20px;
+            padding: 8px 12px;
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .upgrades {
+            padding: 16px;
+            background: #0f0f23;
+            border-top: 1px solid #2a2a4a;
+            max-height: 280px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .upgrades-title {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .upgrade-item {
+            background: #1f1f3a;
+            border-radius: 20px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #3a3a5a;
+        }
+
+        .upgrade-item:active {
+            transform: scale(0.98);
+            background: #2a2a4a;
+        }
+
+        @media (hover: hover) {
+            .upgrade-item:hover {
+                background: #2a2a4a;
+                transform: scale(1.01);
+            }
+        }
+
+        .upgrade-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upgrade-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .upgrade-name {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .upgrade-desc {
+            color: #aaa;
+            font-size: 11px;
+        }
+
+        .upgrade-cost {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 30px;
+        }
+
+        .upgrade-cost span {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .tap-button {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            margin: 12px 16px 16px;
+            padding: 16px;
+            border-radius: 60px;
+            color: #1a1a2e;
+            font-weight: bold;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            width: calc(100% - 32px);
+        }
+
+        .tap-button:active {
+            transform: scale(0.97);
+        }
+
+        .milestone-tracker {
+            background: #1a1a2a;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            border-top: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .milestone-item {
+            background: #0f0f23;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .milestone-label {
+            color: #888;
+            font-size: 10px;
+        }
+
+        .milestone-value {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .game-container { padding: 8px; }
+            .coin-header { padding: 12px; }
+            .balance-value { font-size: 28px; }
+            .character-clicker { padding: 20px; }
+            .stats { gap: 5px; }
+            .stat-card { padding: 6px 8px; }
+            .upgrades { max-height: 220px; }
+            .tap-button { font-size: 18px; padding: 14px; }
+            .top-nav { flex-direction: column; }
+            .milestone-tracker { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-window">
+        <div class="top-nav">
+            <a href="#" id="otherGameLink" class="game-link" target="_blank">
+                🎮 ДРУГАЯ ИГРА 🎮
+            </a>
+            <button id="resetButton" class="reset-btn">🔄 СБРОС</button>
+        </div>
+
+        <div class="coin-header">
+            <div class="coin-balance">
+                <span>🐹</span>
+                <span class="balance-value" id="coinBalance">0</span>
+                <span>🪙</span>
+            </div>
+            <div class="per-click" id="perClickValue">💰 +1 за клик</div>
+        </div>
+
+        <div class="character-clicker" id="clickArea">
+            <div class="character-avatar" id="characterAvatar">
+                <img id="friendPhoto" src="212.jpg" alt="друг" onerror="this.src='https://randomuser.me/api/portraits/men/32.jpg'">
+            </div>
+        </div>
+
+        <div class="energy-bar">
+            <div class="energy-label">
+                <span>⚡ Энергия</span>
+                <span id="energyText">1000 / 1000</span>
+            </div>
+            <div class="energy-fill-container">
+                <div class="energy-fill" id="energyFill"></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalClicks">0</div>
+                <div class="stat-label">Всего кликов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="profitPerHour">0</div>
+                <div class="stat-label">💸 В час</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="clickPower">1</div>
+                <div class="stat-label">💪 Сила клика</div>
+            </div>
+        </div>
+
+        <div class="upgrades">
+            <div class="upgrades-title">📈 Апгрейды</div>
+            <div id="upgradesList"></div>
+        </div>
+
+        <button class="tap-button" id="tapButton">👆 ТАПНУТЬ 👆</button>
+        
+        <div class="milestone-tracker">
+            <div class="milestone-item">
+                <div class="milestone-label">🔊 Следующий 10-й клик</div>
+                <div class="milestone-value" id="next10">10</div>
+            </div>
+            <div class="milestone-item">
+                <div class="milestone-label">🔊 Следующий 50-й клик</div>
+                <div class="milestone-value" id="next50">50</div>
+            </div>
+            <div class="milestone-item">
+                <div class="milestone-label">🔊 Следующий 100-й клик</div>
+                <div class="milestone-value" id="next100">100</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== ГИПЕРССЫЛКА ==========
+    const gameLink = document.getElementById('otherGameLink');
+    gameLink.href = "yusuf.index.html";  // ЗАМЕНИ НА СВОЮ ССЫЛКУ
+    
+    // ========== ФОТО ==========
+    document.getElementById('friendPhoto').src = "212.jpg";
+    
+    // ==================================================================
+    // ========== НАСТРОЙКА ЗВУКОВ - ГАРАНТИРОВАННО РАБОТАЕТ ==========
+    // ==================================================================
+    // Чтобы использовать свои звуки, положи файлы: sound10.mp3, sound50.mp3, sound100.mp3
+    // в ту же папку, что и этот HTML-файл. Если файлов нет - будут проигрываться 
+    // синтезированные "пищалки" (чтобы звук точно был слышен)
+    
+    const SOUNDS = {
+        sound10: "sound10.mp3",   // звук на каждый 10-й клик (10, 20, 30...)
+        sound50: "sound50.mp3",   // звук на каждый 50-й клик (50, 100, 150...)
+        sound100: "sound100.mp3"  // звук на каждый 100-й клик (100, 200, 300...)
+    };
+    
+    let audioAllowed = false;
+    let webAudioContext = null;
+    
+    // Функция для создания синтезированного звука (резервный вариант, если mp3 недоступен)
+    function playSynthesizedBeep(frequency = 880, duration = 0.2, volume = 0.3) {
+        if (!audioAllowed) return;
+        try {
+            if (!webAudioContext) {
+                webAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Если контекст в suspended - пробуем resume
+            if (webAudioContext.state === 'suspended') {
+                webAudioContext.resume();
+            }
+            const now = webAudioContext.currentTime;
+            const oscillator = webAudioContext.createOscillator();
+            const gainNode = webAudioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(webAudioContext.destination);
+            oscillator.frequency.value = frequency;
+            gainNode.gain.setValueAtTime(volume, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+            oscillator.start();
+            oscillator.stop(now + duration);
+        } catch(e) {
+            console.warn("WebAudio fallback error:", e);
+        }
+    }
+    
+    // Основная функция воспроизведения звука (пробует mp3, при ошибке - синтез)
+    function playSound(soundUrl, fallbackFreq = 800, duration = 0.2) {
+        if (!audioAllowed) return;
+        if (!soundUrl) {
+            playSynthesizedBeep(fallbackFreq, duration, 0.25);
+            return;
+        }
+        
+        // Пробуем загрузить и сыграть аудио через HTMLAudioElement
+        const audio = new Audio();
+        audio.src = soundUrl;
+        audio.volume = 0.6;
+        audio.play().catch((err) => {
+            console.log(`Не удалось воспроизвести ${soundUrl}, используем синтез.`, err);
+            // Если файл не найден или не может играть - синтезируем характерный звук для рубежа
+            playSynthesizedBeep(fallbackFreq, duration, 0.35);
+        });
+    }
+    
+    // Специальные звуки для рубежей с разными частотами (чтобы отличать на слух)
+    function playMilestoneSound10() {
+        console.log("🔊 10-й клик! Звук рубежа 10");
+        playSound(SOUNDS.sound10, 1000, 0.18);  // частота 660Гц для 10-х
+    }
+    
+    function playMilestoneSound50() {
+        console.log("🔊 50-й клик! Звук рубежа 50");
+        playSound(SOUNDS.sound50, 1000, 0.22);  // частота 880Гц для 50-х
+    }
+    
+    function playMilestoneSound100() {
+        console.log("🔊 100-й клик! Звук рубежа 100");
+        playSound(SOUNDS.sound100, 1046, 0.28); // частота ~1046Гц (С6) для 100-х
+    }
+    
+    // Обычный звук клика (короткий)
+    function playTapSoundEffect() {
+        if (!audioAllowed) return;
+        playSynthesizedBeep(520, 0.07, 0.12);
+    }
+    
+    // Функция активации звука по первому касанию/клику
+    function enableAudio() {
+        if (audioAllowed) return;
+        audioAllowed = true;
+        // Инициализируем контекст, если ещё нет
+        if (!webAudioContext) {
+            webAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (webAudioContext && webAudioContext.state === 'suspended') {
+            webAudioContext.resume().then(() => {
+                console.log("🎵 Аудиоконтекст запущен!");
+            }).catch(e => console.log("Ошибка запуска аудио:", e));
+        }
+        // Пробный звук для подтверждения включения звука
+        playSynthesizedBeep(600, 0.1, 0.1);
+        console.log("🔊 Звук активирован!");
+    }
+    
+    // ========== ИГРОВЫЕ ПАРАМЕТРЫ ==========
+    let coins = 0;
+    let totalClicks = 0;
+    let clickPower = 1;
+    let maxEnergy = 1000;
+    let currentEnergy = 1000;
+    let passiveIncomePerHour = 0;
+    let lastUpdateTime = Date.now();
+    let critChance = 0;
+    
+    let upgrades = [
+        { id: 0, name: "🤜 Усиление клика", desc: "+1 монета", baseCost: 50, cost: 50, level: 0, maxLevel: 50, type: "click", value: 1 },
+        { id: 1, name: "⚡ Увеличение энергии", desc: "+50 энергии", baseCost: 100, cost: 100, level: 0, maxLevel: 30, type: "energy", value: 50 },
+        { id: 2, name: "🏭 Пассивный доход", desc: "+10/час", baseCost: 200, cost: 200, level: 0, maxLevel: 50, type: "passive", value: 10 },
+        { id: 3, name: "💎 Критический удар", desc: "+2.5% шанс", baseCost: 500, cost: 500, level: 0, maxLevel: 20, type: "crit", value: 2.5 }
+    ];
+    
+    function updateUI() {
+        document.getElementById('coinBalance').innerText = Math.floor(coins);
+        document.getElementById('totalClicks').innerText = totalClicks;
+        document.getElementById('clickPower').innerText = clickPower;
+        document.getElementById('profitPerHour').innerText = passiveIncomePerHour;
+        
+        let percent = (currentEnergy / maxEnergy) * 100;
+        let fill = document.getElementById('energyFill');
+        fill.style.width = percent + '%';
+        document.getElementById('energyText').innerText = `${Math.floor(currentEnergy)} / ${maxEnergy}`;
+        document.getElementById('perClickValue').innerHTML = `💰 +${clickPower} за клик`;
+        
+        fill.classList.remove('low', 'critical');
+        if(percent < 30) fill.classList.add('critical');
+        else if(percent < 60) fill.classList.add('low');
+        
+        updateMilestoneDisplay();
+        renderUpgrades();
+    }
+    
+    function updateMilestoneDisplay() {
+        let next10 = Math.ceil((totalClicks + 1) / 10) * 10;
+        let next50 = Math.ceil((totalClicks + 1) / 50) * 50;
+        let next100 = Math.ceil((totalClicks + 1) / 100) * 100;
+        
+        document.getElementById('next10').innerText = next10;
+        document.getElementById('next50').innerText = next50;
+        document.getElementById('next100').innerText = next100;
+    }
+    
+    function createFloatingNumber(value, special = false, specialText = "") {
+        const area = document.getElementById('clickArea');
+        const rect = area.getBoundingClientRect();
+        const container = document.querySelector('.game-container');
+        const cRect = container.getBoundingClientRect();
+        const div = document.createElement('div');
+        div.className = 'floating-number';
+        if (special) {
+            div.innerText = specialText || `🎉 +${value} 🎉`;
+            div.style.color = '#ff66ff';
+            div.style.fontSize = '24px';
+        } else {
+            div.innerText = `+${value}`;
+        }
+        div.style.left = (rect.left + rect.width/2 - cRect.left - 20) + 'px';
+        div.style.top = (rect.top + rect.height/2 - cRect.top - 30) + 'px';
+        container.appendChild(div);
+        setTimeout(() => div.remove(), 800);
+    }
+    
+    function celebrateEffect(color, duration = 300) {
+        const avatar = document.getElementById('characterAvatar');
+        avatar.style.transform = 'scale(1.1)';
+        avatar.style.borderColor = color;
+        setTimeout(() => {
+            avatar.style.transform = '';
+            avatar.style.borderColor = '#ffd700';
+        }, duration);
+    }
+    
+    // ГЛАВНАЯ ФУНКЦИЯ КЛИКА с проверкой рубежей и звуками
+    function makeClick(e) {
+        if (currentEnergy <= 0) return;
+        
+        // Включаем звук при первом клике, если ещё не включён
+        if (!audioAllowed) enableAudio();
+        
+        // Звук обычного клика
+        playTapSoundEffect();
+        
+        currentEnergy = Math.max(0, currentEnergy - 1);
+        let earned = clickPower;
+        
+        if (critChance > 0 && Math.random() * 100 < critChance) {
+            earned = earned * 2;
+            createFloatingNumber(earned, true, "💥 КРИТ! +" + earned);
+        }
+        
+        coins += earned;
+        totalClicks++;
+        
+        // ========== ОСНОВНАЯ ЛОГИКА ЗВУКОВ НА РУБЕЖИ (10, 50, 100) ==========
+        let milestoneBonus = 0;
+        let milestoneColor = "";
+        let milestoneText = "";
+        let isMilestone = false;
+        
+        // Приоритет: 100 → 50 → 10. Чем больше рубеж, тем круче бонус и звук.
+        if (totalClicks % 100 === 0 && totalClicks > 0) {
+            console.log(`✨ ДОСТИГНУТ 100-Й РУБЕЖ! Всего кликов: ${totalClicks}`);
+            playMilestoneSound100();          // специальный звук на 100
+            milestoneBonus = 100;
+            milestoneColor = "#ff00ff";
+            milestoneText = "🎊 100 КЛИКОВ! +100 🎊";
+            isMilestone = true;
+            createFloatingNumber(100, true, "🏆 СТО КЛИКОВ! +100 🏆");
+            celebrateEffect(milestoneColor, 350);
+        }
+        else if (totalClicks % 50 === 0 && totalClicks > 0) {
+            console.log(`✨ ДОСТИГНУТ 50-Й РУБЕЖ! Всего кликов: ${totalClicks}`);
+            playMilestoneSound50();           // специальный звук на 50
+            milestoneBonus = 50;
+            milestoneColor = "#ff6600";
+            milestoneText = "🎉 50 КЛИКОВ! +50 🎉";
+            isMilestone = true;
+            createFloatingNumber(50, true, "🎉 50 КЛИКОВ! +50 🎉");
+            celebrateEffect(milestoneColor, 300);
+        }
+        else if (totalClicks % 10 === 0 && totalClicks > 0) {
+            console.log(`✨ ДОСТИГНУТ 10-Й РУБЕЖ! Всего кликов: ${totalClicks}`);
+            playMilestoneSound10();           // специальный звук на 10
+            milestoneBonus = 10;
+            milestoneColor = "#ffcc00";
+            milestoneText = "✨ 10 КЛИКОВ! +10 ✨";
+            isMilestone = true;
+            createFloatingNumber(10, true, "✨ 10 КЛИКОВ! +10 ✨");
+            celebrateEffect(milestoneColor, 250);
+        }
+        
+        // Если достигнут рубеж - добавляем бонусные монеты
+        if (isMilestone) {
+            coins += milestoneBonus;
+        }
+        
+        // Обычный плавающий плюсик (если не критический, и не особое событие)
+        if (!isMilestone && earned <= clickPower) {
+            createFloatingNumber(earned);
+        } else if (!isMilestone && earned > clickPower) {
+            createFloatingNumber(earned, true, "💥 +" + earned);
+        }
+        
+        updateUI();
+        
+        // Вибрация на мобильных
+        if (navigator.vibrate) navigator.vibrate(20);
+        if (e && e.preventDefault) e.preventDefault();
+    }
+    
+    function buyUpgrade(id) {
+        const u = upgrades[id];
+        if (u.level >= u.maxLevel) return;
+        if (coins < u.cost) return;
+        
+        coins -= u.cost;
+        u.level++;
+        
+        switch(u.type) {
+            case "click": clickPower += u.value; break;
+            case "energy": maxEnergy += u.value; currentEnergy += u.value; break;
+            case "passive": passiveIncomePerHour += u.value; break;
+            case "crit": critChance = Math.min(50, u.level * u.value); break;
+        }
+        
+        u.cost = Math.floor(u.baseCost * Math.pow(1.15, u.level));
+        updateUI();
+        
+        // Звук покупки апгрейда
+        if (audioAllowed) playSynthesizedBeep(440, 0.12, 0.2);
+    }
+    
+    function renderUpgrades() {
+        const container = document.getElementById('upgradesList');
+        container.innerHTML = '';
+        for(let u of upgrades) {
+            const isMaxed = u.level >= u.maxLevel;
+            const div = document.createElement('div');
+            div.className = 'upgrade-item' + (isMaxed ? ' disabled' : '');
+            let val = "";
+            if(u.type === "click") val = `+${u.value}`;
+            else if(u.type === "energy") val = `+${u.value}`;
+            else if(u.type === "passive") val = `+${u.value}/час`;
+            else if(u.type === "crit") val = `${(u.level * u.value).toFixed(1)}%`;
+            
+            div.innerHTML = `
+                <div class="upgrade-info">
+                    <div class="upgrade-name">${u.name} (${u.level}/${u.maxLevel})</div>
+                    <div class="upgrade-desc">${u.desc} ${val}</div>
+                </div>
+                <div class="upgrade-cost"><span>🪙</span><span>${isMaxed ? "MAX" : u.cost}</span></div>
+            `;
+            if (!isMaxed) {
+                div.onclick = (function(id) { return function() { buyUpgrade(id); }; })(u.id);
+                div.ontouchstart = (function(id) { return function(e) { e.preventDefault(); buyUpgrade(id); }; })(u.id);
+            }
+            container.appendChild(div);
+        }
+    }
+    
+    function updatePassive() {
+        const now = Date.now();
+        let delta = Math.min(5, (now - lastUpdateTime) / 1000);
+        if (delta > 0 && delta < 10) {
+            // Восстановление энергии
+            currentEnergy = Math.min(maxEnergy, currentEnergy + 12 * delta);
+            // Пассивный доход
+            let gain = (passiveIncomePerHour / 3600) * delta;
+            if (gain > 0.01) coins += gain;
+            updateUI();
+        }
+        lastUpdateTime = now;
+    }
+    
+    // ========== СОХРАНЕНИЕ ==========
+    function saveGame() {
+        try {
+            const saveData = {
+                coins: Math.floor(coins),
+                totalClicks: totalClicks,
+                clickPower: clickPower,
+                maxEnergy: maxEnergy,
+                currentEnergy: currentEnergy,
+                passiveIncomePerHour: passiveIncomePerHour,
+                critChance: critChance,
+                upgrades: upgrades.map(u => ({ level: u.level, cost: u.cost }))
+            };
+            localStorage.setItem('clickerSave_v5_sound', JSON.stringify(saveData));
+            console.log("💾 Игра сохранена, кликов:", totalClicks);
+        } catch(e) {}
+    }
+    
+    function loadGame() {
+        const saved = localStorage.getItem('clickerSave_v5_sound');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                coins = data.coins || 0;
+                totalClicks = data.totalClicks || 0;
+                clickPower = data.clickPower || 1;
+                maxEnergy = data.maxEnergy || 1000;
+                currentEnergy = data.currentEnergy || 1000;
+                passiveIncomePerHour = data.passiveIncomePerHour || 0;
+                critChance = data.critChance || 0;
+                
+                if (data.upgrades) {
+                    for(let i = 0; i < data.upgrades.length && i < upgrades.length; i++) {
+                        upgrades[i].level = data.upgrades[i].level || 0;
+                        upgrades[i].cost = data.upgrades[i].cost || upgrades[i].baseCost;
+                    }
+                }
+                // Пересчет крит шанса
+                critChance = 0;
+                for(let u of upgrades) {
+                    if (u.type === "crit") critChance = Math.min(50, u.level * u.value);
+                }
+                updateUI();
+                console.log("💾 Загружено сохранение, кликов:", totalClicks);
+            } catch(e) {}
+        } else {
+            console.log("Новое сохранение не найдено, старт игры.");
+        }
+    }
+    
+    function resetGame() {
+        if (confirm("Сбросить весь прогресс? Все монеты и улучшения исчезнут!")) {
+            localStorage.removeItem('clickerSave_v5_sound');
+            coins = 0;
+            totalClicks = 0;
+            clickPower = 1;
+            maxEnergy = 1000;
+            currentEnergy = 1000;
+            passiveIncomePerHour = 0;
+            critChance = 0;
+            upgrades.forEach(u => {
+                u.level = 0;
+                u.cost = u.baseCost;
+            });
+            updateUI();
+            console.log("🔄 Прогресс сброшен");
+            if (audioAllowed) playSynthesizedBeep(400, 0.2, 0.15);
+        }
+    }
+    
+    // ========== ОБРАБОТЧИКИ ==========
+    const clickArea = document.getElementById('clickArea');
+    const tapButton = document.getElementById('tapButton');
+    const characterAvatar = document.getElementById('characterAvatar');
+    const resetBtn = document.getElementById('resetButton');
+    
+    function handleClick(e) {
+        makeClick(e);
+        characterAvatar.style.transform = 'scale(0.95)';
+        setTimeout(() => { if(characterAvatar) characterAvatar.style.transform = ''; }, 100);
+    }
+    
+    clickArea.addEventListener('click', handleClick);
+    clickArea.addEventListener('touchstart', handleClick, { passive: false });
+    tapButton.addEventListener('click', handleClick);
+    tapButton.addEventListener('touchstart', handleClick, { passive: false });
+    resetBtn.addEventListener('click', resetGame);
+    
+    // Включение звука при любом касании страницы
+    function initAudioOnFirstInteraction() {
+        enableAudio();
+        document.body.removeEventListener('touchstart', initAudioOnFirstInteraction);
+        document.body.removeEventListener('click', initAudioOnFirstInteraction);
+    }
+    document.body.addEventListener('touchstart', initAudioOnFirstInteraction);
+    document.body.addEventListener('click', initAudioOnFirstInteraction);
+    
+    // ========== ЦИКЛЫ ==========
+    setInterval(updatePassive, 1000);
+    setInterval(saveGame, 15000);
+    window.addEventListener('beforeunload', saveGame);
+    
+    // ========== ЗАПУСК ==========
+    loadGame();
+    updateUI();
+    lastUpdateTime = Date.now();
+</script>
+</body>
+</html>
